@@ -92,8 +92,9 @@ body {
 }
 
 .custom-slider::-webkit-slider-thumb {
-  @apply appearance-none w-4 h-4 bg-blue-500 rounded-full cursor-pointer;
+  @apply appearance-none w-4 h-4 rounded-full cursor-pointer;
   -webkit-appearance: none;
+  background-color: var(--slider-color, #3B82F6);
   box-shadow: 0 0 0 4px white, 0 1px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
   position: relative;
@@ -102,13 +103,12 @@ body {
 }
 
 .custom-slider::-webkit-slider-thumb:hover {
-  @apply bg-blue-600;
   transform: translateY(-50%) scale(1.1);
 }
 
 .custom-slider::-webkit-slider-runnable-track {
   @apply h-1 rounded-full;
-  background: linear-gradient(to right, #3B82F6 var(--value-percent), #E5E7EB var(--value-percent));
+  background: linear-gradient(to right, var(--slider-color, #3B82F6) var(--value-percent), #E5E7EB var(--value-percent));
 }
 
 .custom-slider:focus {
@@ -116,5 +116,6 @@ body {
 }
 
 .custom-slider:focus::-webkit-slider-thumb {
-  @apply ring-2 ring-blue-200;
+  @apply ring-2;
+  --tw-ring-color: color-mix(in srgb, var(--slider-color, #3B82F6) 25%, white);
 }

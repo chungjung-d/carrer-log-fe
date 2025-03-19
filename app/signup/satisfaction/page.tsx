@@ -3,9 +3,8 @@
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 
-type ImportanceValues = {
+type SatisfactionValues = {
   업무: number
   보상: number
   성장: number
@@ -14,15 +13,16 @@ type ImportanceValues = {
   가치: number
 }
 
-const IMPORTANCE_DESCRIPTIONS = {
-  업무: '업무 내용과 난이도',
-  보상: '급여 및 복리후생',
-  성장: '성장 가능성과 자기계발',
-  환경: '근무 환경과 문화',
-  관계: '동료와의 관계',
-  가치: '회사의 비전과 가치관'
+const SATISFACTION_DESCRIPTIONS = {
+  업무: '현재 업무 내용과 난이도에 대한 만족도',
+  보상: '현재 급여와 복리후생에 대한 만족도',
+  성장: '현재 성장 가능성과 자기계발 기회에 대한 만족도',
+  환경: '현재 근무 환경과 문화에 대한 만족도',
+  관계: '현재 동료와의 관계에 대한 만족도',
+  가치: '현재 회사의 비전과 가치관에 대한 만족도'
 }
 
+// 파란색 계열의 차분한 색상으로 통일
 const SLIDER_COLORS = {
   업무: '#4F46E5', // 인디고
   보상: '#F59E0B', // 황색
@@ -32,9 +32,8 @@ const SLIDER_COLORS = {
   가치: '#8B5CF6', // 보라
 }
 
-export default function ImportancePage() {
-  const router = useRouter()
-  const [values, setValues] = useState<ImportanceValues>({
+export default function SatisfactionPage() {
+  const [values, setValues] = useState<SatisfactionValues>({
     업무: 0,
     보상: 0,
     성장: 0,
@@ -43,44 +42,36 @@ export default function ImportancePage() {
     가치: 0,
   })
 
-  const handleChange = (key: keyof ImportanceValues, value: number) => {
+  const handleChange = (key: keyof SatisfactionValues, value: number) => {
     setValues(prev => ({ ...prev, [key]: value }))
-  }
-
-  const handleNext = () => {
-    // 여기서 필요한 경우 값을 저장하거나 검증할 수 있습니다
-    router.push('/signup/satisfaction')
   }
 
   return (
     <main className="min-h-screen bg-gray-50">
       {/* 상단 네비게이션 */}
       <nav className="flex items-center justify-between px-4 py-3 bg-white border-b sticky top-0 z-10">
-        <Link href="/signup" className="text-black">
+        <Link href="/signup/importance" className="text-black">
           <ChevronLeft className="w-6 h-6" />
         </Link>
-        <button 
-          onClick={handleNext}
-          className="text-[#007AFF] font-medium"
-        >
+        <button className="text-[#007AFF] font-medium">
           다음
         </button>
       </nav>
 
-      {/* 중요도 입력 폼 */}
+      {/* 만족도 입력 폼 */}
       <div className="px-4 py-6">
         <div className="space-y-4">
           <div className="bg-white rounded-xl p-6 shadow-sm">
             <div className="space-y-3">
               <div className="inline-block">
                 <h2 className="text-xl font-semibold relative">
-                  각 영역의 중요도를 설정해주세요
+                  현재 회사에 대한 만족도를 평가해주세요
                   <div className="absolute bottom-0 left-0 w-full h-[6px] bg-blue-100 -z-10 translate-y-[2px]" />
                 </h2>
               </div>
               <p className="text-sm text-gray-500 leading-relaxed">
-                각 항목의 슬라이더를 조절하여 중요도를 설정해주세요.<br />
-                설정된 값은 향후 커리어 추천에 활용됩니다.
+                각 항목에 대한 현재 만족도를 설정해주세요.<br />
+                이 정보는 더 나은 커리어 제안을 위해 활용됩니다.
               </p>
             </div>
           </div>
@@ -96,14 +87,14 @@ export default function ImportancePage() {
                   style={{ 
                     background: `
                       linear-gradient(to right, 
-                        ${SLIDER_COLORS[key as keyof ImportanceValues]}30,
-                        ${SLIDER_COLORS[key as keyof ImportanceValues]}10 30%,
-                        ${SLIDER_COLORS[key as keyof ImportanceValues]}05 60%,
+                        ${SLIDER_COLORS[key as keyof SatisfactionValues]}30,
+                        ${SLIDER_COLORS[key as keyof SatisfactionValues]}10 30%,
+                        ${SLIDER_COLORS[key as keyof SatisfactionValues]}05 60%,
                         transparent
                       ),
                       linear-gradient(to bottom, 
                         transparent,
-                        ${SLIDER_COLORS[key as keyof ImportanceValues]}05 100%
+                        ${SLIDER_COLORS[key as keyof SatisfactionValues]}05 100%
                       )
                     `,
                     backgroundBlendMode: 'overlay'
@@ -112,7 +103,7 @@ export default function ImportancePage() {
                 <div 
                   className="absolute top-0 left-0 w-full h-[2px] opacity-30"
                   style={{
-                    background: `linear-gradient(to right, ${SLIDER_COLORS[key as keyof ImportanceValues]}, transparent)`
+                    background: `linear-gradient(to right, ${SLIDER_COLORS[key as keyof SatisfactionValues]}, transparent)`
                   }}
                 />
                 <div className="space-y-4 relative">
@@ -121,18 +112,18 @@ export default function ImportancePage() {
                       <div className="flex items-center gap-2">
                         <div 
                           className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: SLIDER_COLORS[key as keyof ImportanceValues] }}
+                          style={{ backgroundColor: SLIDER_COLORS[key as keyof SatisfactionValues] }}
                         />
                         <span className="font-medium text-[15px]">{key}</span>
                       </div>
                       <span 
                         className="text-sm font-medium"
-                        style={{ color: SLIDER_COLORS[key as keyof ImportanceValues] }}
+                        style={{ color: SLIDER_COLORS[key as keyof SatisfactionValues] }}
                       >
                         {value}%
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 ml-4">{IMPORTANCE_DESCRIPTIONS[key as keyof ImportanceValues]}</p>
+                    <p className="text-sm text-gray-500 ml-4">{SATISFACTION_DESCRIPTIONS[key as keyof SatisfactionValues]}</p>
                   </div>
                   <div className="relative px-1">
                     <input
@@ -140,11 +131,11 @@ export default function ImportancePage() {
                       min="0"
                       max="100"
                       value={value}
-                      onChange={(e) => handleChange(key as keyof ImportanceValues, Number(e.target.value))}
+                      onChange={(e) => handleChange(key as keyof SatisfactionValues, Number(e.target.value))}
                       className="custom-slider"
                       style={{ 
                         '--value-percent': `${value}%`,
-                        '--slider-color': SLIDER_COLORS[key as keyof ImportanceValues]
+                        '--slider-color': SLIDER_COLORS[key as keyof SatisfactionValues]
                       } as React.CSSProperties}
                     />
                   </div>
