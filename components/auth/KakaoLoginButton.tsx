@@ -1,11 +1,21 @@
+'use client'
+
 import { cn } from '@/lib/utils'
 import { ButtonHTMLAttributes } from 'react'
+import { useRouter } from 'next/navigation'
 
 type KakaoLoginButtonProps = ButtonHTMLAttributes<HTMLButtonElement>
 
 export function KakaoLoginButton({ className, ...props }: KakaoLoginButtonProps) {
+  const router = useRouter()
+
+  const handleClick = () => {
+    router.push('/signup')
+  }
+
   return (
     <button
+      onClick={handleClick}
       className={cn(
         "w-full relative flex items-center justify-center gap-2 px-4 py-3 text-black bg-[#FEE500] hover:bg-[#FEE500]/90 rounded-lg font-medium transition-colors",
         className

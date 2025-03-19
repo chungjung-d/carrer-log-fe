@@ -1,3 +1,5 @@
+'use client'
+
 import { KakaoLoginButton } from '@/components/auth/KakaoLoginButton'
 
 export default function LoginPage() {
