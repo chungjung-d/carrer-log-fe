@@ -8,6 +8,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Plus, PenLine, Sparkles, ChevronRight, ArrowLeft } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetHeader } from '@/components/ui/sheet'
 import { useState, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 
 // 모킹 데이터
 const MOCK_TOPICS = [
@@ -43,25 +44,29 @@ const AVERAGE_SCORE = Math.round(
 )
 
 export default function MyPage() {
+  const router = useRouter()
   const { userInfo } = useUserStore()
   const [isTopicMode, setIsTopicMode] = useState(false)
   const [currentTopic, setCurrentTopic] = useState(MOCK_TOPICS[0])
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [fillProgress, setFillProgress] = useState(0)
+  const [pressIntensity, setPressIntensity] = useState(0)
   const [isExploding, setIsExploding] = useState(false)
+  const [canNavigateToChat, setCanNavigateToChat] = useState(true)
   const animationTimer = useRef<number | null>(null)
 
   const handlePressStart = useCallback(() => {
-    setFillProgress(0)
+    setPressIntensity(0)
     setIsExploding(false)
+    setCanNavigateToChat(true)
     
     animationTimer.current = window.setInterval(() => {
-      setFillProgress(prev => {
+      setPressIntensity(prev => {
         if (prev >= 100) {
           if (animationTimer.current) {
             window.clearInterval(animationTimer.current)
           }
           setIsExploding(true)
+          setCanNavigateToChat(false)
           setTimeout(() => {
             setIsRefreshing(true)
             const currentIndex = MOCK_TOPICS.findIndex(t => t.id === currentTopic.id)
@@ -69,6 +74,10 @@ export default function MyPage() {
             setCurrentTopic(MOCK_TOPICS[nextIndex])
             setIsExploding(false)
             setIsRefreshing(false)
+            // 1초 후에 채팅 이동 허용
+            setTimeout(() => {
+              setCanNavigateToChat(true)
+            }, 1000)
           }, 300)
           return 0
         }
@@ -80,9 +89,13 @@ export default function MyPage() {
   const handlePressEnd = useCallback(() => {
     if (animationTimer.current) {
       window.clearInterval(animationTimer.current)
-      setFillProgress(0)
+      if (pressIntensity < 80 && canNavigateToChat) {
+        // 터지기 전에 놓으면 채팅 페이지로 이동
+        router.push('/chat/CHAT_1')
+      }
+      setPressIntensity(0)
     }
-  }, [])
+  }, [pressIntensity, router, canNavigateToChat])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -170,10 +183,9 @@ export default function MyPage() {
                           onTouchEnd={handlePressEnd}
                         >
                           <div 
-                            className="absolute inset-0 bg-blue-500/20 transition-all origin-bottom"
+                            className="absolute inset-0 bg-blue-500 transition-all duration-200"
                             style={{ 
-                              transform: `scaleY(${fillProgress / 100})`,
-                              transition: 'transform 0.1s ease-in-out',
+                              opacity: pressIntensity / 100,
                             }} 
                           />
                           <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-12 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full" />
@@ -200,7 +212,10 @@ export default function MyPage() {
                     자유롭게 작성하거나 추천 주제로 기록할 수 있습니다.
                   </SheetDescription>
                   <div className="space-y-3">
-                    <button className="w-full p-4 text-left bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors flex items-center gap-3 group">
+                    <button 
+                      onClick={() => router.push('/chat/CHAT_1')}
+                      className="w-full p-4 text-left bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors flex items-center gap-3 group"
+                    >
                       <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
                         <PenLine className="w-5 h-5" />
                       </div>
