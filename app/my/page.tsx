@@ -5,6 +5,7 @@ import { TotalScoreCard } from '@/components/charts/TotalScoreCard'
 import { DetailScoreCard } from '@/components/charts/DetailScoreCard'
 import { BalanceChartCard } from '@/components/charts/BalanceChartCard'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
+import { Plus } from 'lucide-react'
 
 const CATEGORIES = {
   업무: { color: '#3B82F6', score: 85 },
@@ -62,6 +63,13 @@ export default function MyPage() {
           <CarouselPrevious />
           <CarouselNext />
         </Carousel>
+      </div>
+
+      {/* 플로팅 추가 버튼 */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
+        <button className="w-14 h-14 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors">
+          <Plus className="w-6 h-6" />
+        </button>
       </div>
     </div>
   )
