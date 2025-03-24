@@ -45,7 +45,7 @@ export default function SignupPage() {
               placeholder="이름"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-0 py-2 text-base border-0 border-b border-gray-300 focus:outline-none focus:border-gray-400 placeholder:text-gray-400"
+              className="w-full px-0 py-2 text-base border-0 border-b border-gray-300 focus:outline-none focus:border-blue-500 placeholder:text-gray-400 text-gray-900"
             />
           </div>
 
@@ -56,7 +56,7 @@ export default function SignupPage() {
               placeholder="조직명"
               value={organization}
               onChange={(e) => setOrganization(e.target.value)}
-              className="w-full px-0 py-2 text-base border-0 border-b border-gray-300 focus:outline-none focus:border-gray-400 placeholder:text-gray-400"
+              className="w-full px-0 py-2 text-base border-0 border-b border-gray-300 focus:outline-none focus:border-blue-500 placeholder:text-gray-400 text-gray-900"
             />
           </div>
         </div>

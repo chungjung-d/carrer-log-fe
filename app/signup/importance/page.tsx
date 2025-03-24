@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 type ImportanceValues = {
   업무: number
@@ -43,13 +44,27 @@ export default function ImportancePage() {
     가치: 0,
   })
 
+  const calculateTotal = (currentValues: ImportanceValues) => {
+    return Object.values(currentValues).reduce((sum, value) => sum + value, 0)
+  }
+
   const handleChange = (key: keyof ImportanceValues, value: number) => {
-    setValues(prev => ({ ...prev, [key]: value }))
+    const newValues = { ...values, [key]: value }
+    const total = calculateTotal(newValues)
+    
+    if (total > 100) {
+      // 총합이 100을 초과하면 현재 변경하려는 값을 조정
+      const adjustedValue = value - (total - 100)
+      setValues({ ...values, [key]: adjustedValue })
+    } else {
+      setValues(newValues)
+    }
   }
 
   const handleNext = () => {
-    // 여기서 필요한 경우 값을 저장하거나 검증할 수 있습니다
-    router.push('/signup/satisfaction')
+    if (calculateTotal(values) === 100) {
+      router.push('/signup/satisfaction')
+    }
   }
 
   return (
@@ -61,7 +76,10 @@ export default function ImportancePage() {
         </Link>
         <button 
           onClick={handleNext}
-          className="text-[#007AFF] font-medium"
+          className={cn(
+            "font-medium transition-colors",
+            calculateTotal(values) === 100 ? "text-[#007AFF]" : "text-[#007AFF]/30"
+          )}
         >
           다음
         </button>
@@ -78,10 +96,15 @@ export default function ImportancePage() {
                   <div className="absolute bottom-0 left-0 w-full h-[6px] bg-blue-100 -z-10 translate-y-[2px]" />
                 </h2>
               </div>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                각 항목의 슬라이더를 조절하여 중요도를 설정해주세요.<br />
-                설정된 값은 향후 커리어 추천에 활용됩니다.
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  각 항목의 슬라이더를 조절하여 중요도를 설정해주세요.<br />
+                  설정된 값은 향후 커리어 추천에 활용됩니다.
+                </p>
+                <div className="text-sm font-medium">
+                  총합: <span className="text-[#007AFF]">{calculateTotal(values)}</span>/100
+                </div>
+              </div>
             </div>
           </div>
 

@@ -114,7 +114,7 @@ export default function SatisfactionPage() {
                           className="w-2 h-2 rounded-full"
                           style={{ backgroundColor: SLIDER_COLORS[key as keyof SatisfactionValues] }}
                         />
-                        <span className="font-medium text-[15px]">{key}</span>
+                        <span className="font-medium text-[15px] text-gray-900">{key}</span>
                       </div>
                       <span 
                         className="text-sm font-medium"
@@ -123,7 +123,7 @@ export default function SatisfactionPage() {
                         {value}%
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 ml-4">{SATISFACTION_DESCRIPTIONS[key as keyof SatisfactionValues]}</p>
+                    <p className="text-sm text-gray-600 ml-4">{SATISFACTION_DESCRIPTIONS[key as keyof SatisfactionValues]}</p>
                   </div>
                   <div className="relative px-1">
                     <input
