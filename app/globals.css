@@ -119,3 +119,18 @@ body {
   @apply ring-2;
   --tw-ring-color: color-mix(in srgb, var(--slider-color, #3B82F6) 25%, white);
 }
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}

@@ -74,7 +74,7 @@ export default function MyPage() {
               <Plus className="w-6 h-6" />
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl px-4">
+          <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl px-4 animate-slide-up">
             <div className="pt-8">
               <SheetTitle className="text-xl font-bold text-center mb-6">
                 오늘 업무에서 성취감을 느꼈던 적은 언제인가요?
