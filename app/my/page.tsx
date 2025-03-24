@@ -5,9 +5,9 @@ import { TotalScoreCard } from '@/components/charts/TotalScoreCard'
 import { DetailScoreCard } from '@/components/charts/DetailScoreCard'
 import { BalanceChartCard } from '@/components/charts/BalanceChartCard'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
-import { Plus, PenLine, Sparkles, ChevronRight, ArrowLeft, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react'
+import { Plus, PenLine, Sparkles, ChevronRight, ArrowLeft } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetHeader } from '@/components/ui/sheet'
-import { useState } from 'react'
+import { useState, useCallback, useRef } from 'react'
 
 // 모킹 데이터
 const MOCK_TOPICS = [
@@ -45,9 +45,44 @@ const AVERAGE_SCORE = Math.round(
 export default function MyPage() {
   const { userInfo } = useUserStore()
   const [isTopicMode, setIsTopicMode] = useState(false)
-  const [currentTopic, setCurrentTopic] = useState(() => 
-    MOCK_TOPICS[Math.floor(Math.random() * MOCK_TOPICS.length)]
-  )
+  const [currentTopic, setCurrentTopic] = useState(MOCK_TOPICS[0])
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [fillProgress, setFillProgress] = useState(0)
+  const [isExploding, setIsExploding] = useState(false)
+  const animationTimer = useRef<number | null>(null)
+
+  const handlePressStart = useCallback(() => {
+    setFillProgress(0)
+    setIsExploding(false)
+    
+    animationTimer.current = window.setInterval(() => {
+      setFillProgress(prev => {
+        if (prev >= 100) {
+          if (animationTimer.current) {
+            window.clearInterval(animationTimer.current)
+          }
+          setIsExploding(true)
+          setTimeout(() => {
+            setIsRefreshing(true)
+            const currentIndex = MOCK_TOPICS.findIndex(t => t.id === currentTopic.id)
+            const nextIndex = (currentIndex + 1) % MOCK_TOPICS.length
+            setCurrentTopic(MOCK_TOPICS[nextIndex])
+            setIsExploding(false)
+            setIsRefreshing(false)
+          }, 300)
+          return 0
+        }
+        return prev + 3
+      })
+    }, 20)
+  }, [currentTopic])
+
+  const handlePressEnd = useCallback(() => {
+    if (animationTimer.current) {
+      window.clearInterval(animationTimer.current)
+      setFillProgress(0)
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -112,69 +147,48 @@ export default function MyPage() {
                     </button>
                     <div className="pl-7">
                       <SheetTitle className="text-base font-medium text-gray-500">오늘의 주제</SheetTitle>
-                      <p className="text-sm text-gray-400">좌우로 스와이프하여 다른 주제를 확인해보세요</p>
+                      <p className="text-sm text-gray-400">카드를 길게 눌러 새로운 주제를 확인해보세요</p>
                     </div>
                   </SheetHeader>
                   <Carousel
                     opts={{
-                      align: "start",
+                      align: "center",
                       loop: true,
                     }}
                     className="w-full"
-                    onMouseEnter={() => {
-                      const guide = document.getElementById('swipe-guide')
-                      if (guide) guide.style.opacity = '1'
-                    }}
-                    onMouseLeave={() => {
-                      const guide = document.getElementById('swipe-guide')
-                      if (guide) guide.style.opacity = '0'
-                    }}
                   >
-                    <div className="relative">
-                      <CarouselContent>
-                        {MOCK_TOPICS.map((topic) => (
-                          <CarouselItem key={topic.id}>
-                            <div className="relative bg-white p-6 rounded-2xl border border-gray-100">
-                              <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-12 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full" />
-                              <div className="pl-4">
-                                <p className="text-lg font-medium text-gray-900 mb-4">{topic.content}</p>
-                                <button 
-                                  onClick={() => setCurrentTopic(topic)}
-                                  className="text-sm text-blue-500 hover:text-blue-600 font-medium transition-colors flex items-center gap-1"
-                                >
-                                  이 주제로 기록하기
-                                  <ChevronRight className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                      <div 
-                        id="swipe-guide"
-                        className="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300 ease-in-out"
-                        style={{
-                          background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(255, 255, 255, 0) 15%, rgba(255, 255, 255, 0) 85%, rgba(59, 130, 246, 0.1) 100%)'
-                        }}
-                      >
-                        <div className="absolute left-2 top-1/2 -translate-y-1/2 text-blue-500 animate-pulse">
-                          <ChevronLeft className="w-6 h-6" />
+                    <CarouselContent className="-ml-2 md:-ml-4">
+                      <CarouselItem className="pl-2 md:pl-4 basis-full">
+                        <div 
+                          className={`relative bg-white p-4 rounded-2xl border border-gray-100 min-h-[140px] flex flex-col transition-all duration-300 overflow-hidden
+                            ${isExploding ? 'scale-105' : ''} 
+                            ${isRefreshing ? 'scale-95 opacity-50' : ''}`}
+                          onMouseDown={handlePressStart}
+                          onMouseUp={handlePressEnd}
+                          onMouseLeave={handlePressEnd}
+                          onTouchStart={handlePressStart}
+                          onTouchEnd={handlePressEnd}
+                        >
+                          <div 
+                            className="absolute inset-0 bg-blue-500/20 transition-all origin-bottom"
+                            style={{ 
+                              transform: `scaleY(${fillProgress / 100})`,
+                              transition: 'transform 0.1s ease-in-out',
+                            }} 
+                          />
+                          <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-12 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full" />
+                          <div className="pl-4 flex flex-col flex-1 relative">
+                            <p className="text-base font-medium text-gray-900 mb-3 flex-1">{currentTopic.content}</p>
+                            <button 
+                              className="text-sm text-blue-500 hover:text-blue-600 font-medium transition-colors flex items-center gap-1"
+                            >
+                              이 주제로 기록하기
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 animate-pulse">
-                          <ChevronRightIcon className="w-6 h-6" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex justify-center gap-1">
-                      {MOCK_TOPICS.map((topic, index) => (
-                        <div
-                          key={index}
-                          className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                            topic.id === currentTopic.id ? 'bg-blue-500' : 'bg-gray-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
+                      </CarouselItem>
+                    </CarouselContent>
                   </Carousel>
                 </>
               ) : (
