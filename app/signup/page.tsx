@@ -5,15 +5,25 @@ import { ChevronLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { useProfileStore } from '@/store/profile'
 
 export default function SignupPage() {
   const router = useRouter()
+  const { createProfile, isLoading, error } = useProfileStore()
   const [name, setName] = useState('')
   const [organization, setOrganization] = useState('')
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (name && organization) {
-      router.push('/signup/importance')
+      try {
+        await createProfile({
+          name,
+          organization,
+        })
+        router.push('/signup/importance')
+      } catch (error) {
+        console.error('프로필 생성 실패:', error)
+      }
     }
   }
 
@@ -30,8 +40,9 @@ export default function SignupPage() {
             name && organization ? "text-[#007AFF]" : "text-[#007AFF]/30"
           )}
           onClick={handleNext}
+          disabled={isLoading}
         >
-          다음
+          {isLoading ? '처리 중...' : '다음'}
         </button>
       </nav>
 
@@ -60,6 +71,12 @@ export default function SignupPage() {
             />
           </div>
         </div>
+
+        {error && (
+          <div className="mt-4 text-red-500 text-sm">
+            {error}
+          </div>
+        )}
       </div>
     </main>
   )
