@@ -9,51 +9,38 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetH
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { jobSatisfactionApi, CurrentJobSatisfactionResponse } from '@/lib/api/job-satisfaction'
+import { noteApi, PreChat } from '@/lib/api/note'
 import { ApiResponse } from '@/lib/api/types'
 import { useQuery } from '@tanstack/react-query'
 import { useProfile } from '@/hooks/useProfile'
-
-// 모킹 데이터
-const MOCK_TOPICS = [
-  {
-    id: 1,
-    content: "오늘 업무에서 성취감을 느꼈던 적은 언제인가요?",
-  },
-  {
-    id: 2,
-    content: "최근 동료와의 관계에서 어려움을 겪은 적이 있나요?",
-  },
-  {
-    id: 3,
-    content: "현재 업무 환경에서 개선되었으면 하는 점은 무엇인가요?",
-  },
-  {
-    id: 4,
-    content: "자신의 성장을 위해 최근 시도한 것이 있다면 무엇인가요?",
-  }
-]
 
 export default function MyPage() {
   const router = useRouter()
   const { profile, isLoading: isProfileLoading } = useProfile()
   const [isTopicMode, setIsTopicMode] = useState(false)
-  const [currentTopic, setCurrentTopic] = useState(MOCK_TOPICS[0])
+  const [currentTopicIndex, setCurrentTopicIndex] = useState(0)
+  
+  const { data: preChatsResponse, isLoading: isPreChatsLoading, error: preChatsError } = useQuery<ApiResponse<{ pre_chats: PreChat[] }>>({
+    queryKey: ['preChats'],
+    queryFn: () => noteApi.getPreChats(),
+    retry: 1,
+  })
+
   const { data: jobSatisfactionResponse, isLoading: isJobSatisfactionLoading } = useQuery<ApiResponse<CurrentJobSatisfactionResponse>>({
     queryKey: ['jobSatisfaction'],
     queryFn: () => jobSatisfactionApi.getCurrentJobSatisfaction(),
   })
 
   const handleRefreshTopic = useCallback(() => {
-    const currentIndex = MOCK_TOPICS.findIndex(t => t.id === currentTopic.id)
-    const nextIndex = (currentIndex + 1) % MOCK_TOPICS.length
-    setCurrentTopic(MOCK_TOPICS[nextIndex])
-  }, [currentTopic])
+    if (!preChatsResponse?.data?.pre_chats) return
+    setCurrentTopicIndex((prev) => (prev + 1) % preChatsResponse.data.pre_chats.length)
+  }, [preChatsResponse?.data?.pre_chats])
 
   const handleCardClick = useCallback(() => {
     router.push('/chat/CHAT_1')
   }, [router])
 
-  if (isProfileLoading || isJobSatisfactionLoading) {
+  if (isProfileLoading || isJobSatisfactionLoading || isPreChatsLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -61,7 +48,15 @@ export default function MyPage() {
     )
   }
 
-  if (!profile || !jobSatisfactionResponse?.data) {
+  if (preChatsError) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-gray-500">인증이 필요합니다. 다시 로그인해주세요.</p>
+      </div>
+    )
+  }
+
+  if (!profile || !jobSatisfactionResponse?.data || !preChatsResponse?.data?.pre_chats) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <p className="text-gray-500">데이터를 불러오는데 실패했습니다.</p>
@@ -69,6 +64,7 @@ export default function MyPage() {
     )
   }
 
+  const currentTopic = preChatsResponse.data.pre_chats[currentTopicIndex]
   const jobSatisfaction = jobSatisfactionResponse.data
 
   const CATEGORIES = {
@@ -186,7 +182,7 @@ export default function MyPage() {
                     <CarouselContent className="-ml-2 md:-ml-4">
                       <CarouselItem className="pl-2 md:pl-4 basis-full">
                         <div 
-                          className="relative bg-gradient-to-br from-white to-gray-50 p-4 rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors min-h-[120px] flex flex-col transition-all duration-500 overflow-hidden cursor-pointer shadow-sm hover:shadow-md"
+                          className="relative bg-gradient-to-br from-white via-blue-50 to-gray-50 p-4 rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors min-h-[120px] flex flex-col transition-all duration-500 overflow-hidden cursor-pointer shadow-sm hover:shadow-md"
                           onClick={handleCardClick}
                         >
                           <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1.5 h-16 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-full shadow-lg" />
