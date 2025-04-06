@@ -150,16 +150,15 @@ export default function MyPage() {
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 섹션 */}
       <div className="bg-white border-b">
-        <div className="max-w-md mx-auto px-4 py-6">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+        <div className="max-w-md mx-auto px-4 py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white text-xl font-medium">
               {profile.name[0]}
             </div>
-            <h1 className="text-xl font-bold">{profile.name}님의<br/>현재 커리어 만족도는</h1>
-          </div>
-          <div className="flex items-center gap-2 mb-6">
-            <span className="text-sm text-gray-500">조직</span>
-            <span className="text-sm font-medium">{profile.organization}</span>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">{profile.name}님의 현재 커리어 만족도</h1>
+              <p className="text-sm text-gray-500 mt-1">{profile.organization}</p>
+            </div>
           </div>
         </div>
       </div>
