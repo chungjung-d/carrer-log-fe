@@ -28,12 +28,30 @@ export interface CreateChatResponse {
   id: string
 }
 
+export interface Message {
+  id: string
+  role: MessageRole
+  content: string
+  timestamp: string
+}
+
+export interface ChatMetadata {
+  message_count: number
+  last_message_at: string
+}
+
+export interface ChatData {
+  messages: Message[]
+  metadata: ChatMetadata
+}
+
 export interface GetChatResponse {
   id: string
+  userId: string
   title: string
-  created_at: string
-  updated_at: string
-  messages: ChatMessage[]
+  chatData: ChatData
+  createdAt: string
+  updatedAt: string
 }
 
 export type MessageRole = 'user' | 'assistant'

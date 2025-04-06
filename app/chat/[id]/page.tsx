@@ -2,95 +2,95 @@
 
 import { useParams } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
-import { Chat, Message } from '@/types/chat'
 import { Send, User, Bot, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useQuery } from '@tanstack/react-query'
+import { noteApi } from '@/lib/api/note'
 
-// 임시 데이터 (나중에 API로 대체)
-const MOCK_CHAT: Chat = {
-  id: 'CHAT_1',
-  userId: 'user1',
-  title: '자유로운 기록',
-  chatData: {
-    messages: [
-      {
-        id: '1',
-        role: 'assistant',
-        content: '안녕하세요! 오늘 하루는 어떠셨나요? 자유롭게 이야기를 나눠보세요.',
-        timestamp: new Date(),
-      },
-    ],
-    metadata: {
-      message_count: 1,
-      last_message_at: new Date(),
-    },
-  },
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-}
-
-const formatTime = (date: Date) => {
+const formatTime = (date: Date | string) => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date
   return new Intl.DateTimeFormat('ko-KR', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false
-  }).format(date)
+  }).format(dateObj)
 }
 
 export default function ChatPage() {
   const params = useParams()
   const chatId = params.id as string
-  const [chat, setChat] = useState<Chat>(MOCK_CHAT)
   const [newMessage, setNewMessage] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [composing, setComposing] = useState(false)
 
+  const { data: chatResponse, isLoading } = useQuery({
+    queryKey: ['chat', chatId],
+    queryFn: () => noteApi.getChat(chatId),
+  })
+
+  const chat = chatResponse?.data
+
   useEffect(() => {
-    // TODO: API 연동 후 실제 데이터 가져오기
-    // const fetchChat = async () => {
-    //   const response = await fetch(`/api/chats/${chatId}`)
-    //   const data = await response.json()
-    //   setChat(data)
-    // }
-    // fetchChat()
-    
-    // 임시로 MOCK_CHAT 사용
-    setChat(MOCK_CHAT)
-  }, [chatId])
+    scrollToBottom()
+  }, [chat?.chatData.messages])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  useEffect(() => {
-    scrollToBottom()
-  }, [chat.chatData.messages])
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newMessage.trim() || composing) return
 
-    const newMsg: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: newMessage,
-      timestamp: new Date(),
-    }
-
-    setChat(prev => ({
-      ...prev,
-      chatData: {
-        messages: [...prev.chatData.messages, newMsg],
-        metadata: {
-          message_count: prev.chatData.metadata.message_count + 1,
-          last_message_at: new Date(),
-        },
-      },
-    }))
-
+    // TODO: API로 메시지 전송 구현
     setNewMessage('')
     inputRef.current?.focus()
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-screen bg-[#F8FAFC]">
+        <div className="bg-white border-b px-4 py-3 flex items-center gap-3 shadow-sm sticky top-0 z-10">
+          <Link 
+            href="/my" 
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="뒤로 가기"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </Link>
+          <div className="animate-pulse">
+            <div className="h-4 w-32 bg-gray-200 rounded"></div>
+            <div className="h-3 w-24 bg-gray-200 rounded mt-1"></div>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!chat) {
+    return (
+      <div className="flex flex-col h-screen bg-[#F8FAFC]">
+        <div className="bg-white border-b px-4 py-3 flex items-center gap-3 shadow-sm sticky top-0 z-10">
+          <Link 
+            href="/my" 
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="뒤로 가기"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </Link>
+          <div>
+            <h1 className="font-semibold text-gray-900">채팅을 찾을 수 없습니다</h1>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-gray-500">채팅이 존재하지 않거나 접근 권한이 없습니다.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -158,7 +158,7 @@ export default function ChatPage() {
                   <p className={`text-[11px] mt-1 ${
                     message.role === 'user' ? 'text-right' : ''
                   } text-gray-500`}>
-                    {formatTime(message.timestamp)}
+                    {formatTime(new Date(message.timestamp))}
                   </p>
                 )}
               </div>
