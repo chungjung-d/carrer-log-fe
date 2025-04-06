@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { noteApi, GetChatResponse } from '@/lib/api/note'
 import { ApiResponse } from '@/lib/api/types'
-import { flushSync } from 'react-dom'
 
 type Message = {
   id: string
@@ -35,6 +34,7 @@ export default function ChatPage() {
   const [composing, setComposing] = useState(false)
   const queryClient = useQueryClient()
   const [messagesWithStreaming, setMessagesWithStreaming] = useState<Message[]>([])
+  const messagesRef = useRef<Message[]>([])
 
   const { data: chatResponse, isLoading } = useQuery({
     queryKey: ['chat', chatId],
@@ -56,6 +56,10 @@ export default function ChatPage() {
     scrollToBottom()
   }, [messagesWithStreaming])
 
+  useEffect(() => {
+    messagesRef.current = messagesWithStreaming
+  }, [messagesWithStreaming])
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -64,7 +68,8 @@ export default function ChatPage() {
     e.preventDefault()
     if (!newMessage.trim() || composing || isStreaming) return
 
-    console.log('Starting chat submission...')
+    console.log('=== 채팅 시작 ===')
+    console.log('현재 메시지:', newMessage)
 
     // 사용자 메시지를 즉시 추가
     const userMessage = {
@@ -74,17 +79,17 @@ export default function ChatPage() {
       timestamp: new Date().toISOString()
     }
 
-    console.log('Adding user message:', userMessage)
-
-    // 로컬 상태만 업데이트 (쿼리 데이터는 업데이트하지 않음)
-    setMessagesWithStreaming(prev => [...prev, userMessage])
+    console.log('사용자 메시지 추가:', userMessage)
+    const updatedMessages = [...messagesRef.current, userMessage]
+    messagesRef.current = updatedMessages
+    setMessagesWithStreaming(updatedMessages)
     setNewMessage('')
     setIsStreaming(true)
 
     try {
-      console.log('Sending request to server...')
+      console.log('서버 요청 시작')
       const response = await noteApi.sendChatMessage(chatId, newMessage)
-      console.log('Server response received:', response)
+      console.log('서버 응답 받음:', response)
       
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
@@ -94,11 +99,13 @@ export default function ChatPage() {
       }
 
       let buffer = ''
-      console.log('Starting to read stream...')
+      console.log('스트리밍 시작')
       while (true) {
         const { done, value } = await reader.read()
+        console.log('청크 받음:', { done, value: value ? '데이터 있음' : '없음' })
+        
         if (done) {
-          console.log('Stream reading completed')
+          console.log('스트리밍 완료')
           break
         }
 
@@ -106,21 +113,20 @@ export default function ChatPage() {
         const lines = buffer.split('\n')
         buffer = lines.pop() || ''
 
-        console.log('Received chunk:', {
-          buffer,
-          lines,
-          remainingBuffer: buffer
+        console.log('버퍼 처리:', {
+          bufferSize: buffer.length,
+          linesCount: lines.length,
+          lines: lines
         })
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6)
-            console.log('Processing data:', data)
-
+            console.log('데이터 처리:', data)
+            
             if (data === '[DONE]') {
-              console.log('Stream completed with [DONE]')
+              console.log('스트리밍 종료 신호 수신')
               setIsStreaming(false)
-              // 스트리밍이 완료된 후에만 쿼리 데이터 업데이트
               queryClient.setQueryData<ApiResponse<GetChatResponse>>(['chat', chatId], (old) => {
                 if (!old?.data) return old
                 return {
@@ -129,10 +135,10 @@ export default function ChatPage() {
                     ...old.data,
                     chatData: {
                       ...old.data.chatData,
-                      messages: messagesWithStreaming,
+                      messages: messagesRef.current,
                       metadata: {
                         ...old.data.chatData.metadata,
-                        message_count: messagesWithStreaming.length,
+                        message_count: messagesRef.current.length,
                         last_message_at: new Date().toISOString()
                       }
                     }
@@ -142,49 +148,46 @@ export default function ChatPage() {
               return
             }
 
-            // 스트리밍 데이터를 로컬 상태에 직접 반영
-            flushSync(() => {
-              setMessagesWithStreaming(prev => {
-                const lastMessage = prev[prev.length - 1]
-                
-                console.log('Updating local messages:', {
-                  lastMessage,
-                  newData: data
-                })
-                
-                if (lastMessage?.role === 'assistant' && lastMessage.id.startsWith('streaming-')) {
-                  // 마지막 메시지가 스트리밍 중인 메시지면 내용 업데이트
-                  return [
-                    ...prev.slice(0, -1),
-                    {
-                      ...lastMessage,
-                      content: lastMessage.content + data
-                    }
-                  ]
-                } else {
-                  // 새로운 스트리밍 메시지 추가
-                  return [
-                    ...prev,
-                    {
-                      id: `streaming-${Date.now()}`,
-                      role: 'assistant',
-                      content: data,
-                      timestamp: new Date().toISOString()
-                    }
-                  ]
+            console.log('상태 업데이트 전:', messagesWithStreaming)
+            const currentMessages = messagesRef.current
+            const lastMessage = currentMessages[currentMessages.length - 1]
+            
+            let updatedMessages: Message[]
+            if (lastMessage?.role === 'assistant' && lastMessage.id.startsWith('streaming-')) {
+              updatedMessages = [
+                ...currentMessages.slice(0, -1),
+                {
+                  ...lastMessage,
+                  content: lastMessage.content + data
                 }
-              })
-            })
+              ]
+            } else {
+              updatedMessages = [
+                ...currentMessages,
+                {
+                  id: `streaming-${Date.now()}`,
+                  role: 'assistant' as const,
+                  content: data,
+                  timestamp: new Date().toISOString()
+                }
+              ]
+            }
 
-            // 스크롤을 자동으로 맨 아래로 이동
-            setTimeout(() => {
+            // ref와 state를 동시에 업데이트
+            messagesRef.current = updatedMessages
+            setMessagesWithStreaming(updatedMessages)
+
+            console.log('상태 업데이트 후:', messagesWithStreaming)
+
+            requestAnimationFrame(() => {
+              console.log('스크롤 업데이트')
               messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-            }, 0)
+            })
           }
         }
       }
     } catch (error) {
-      console.error('Error in chat submission:', error)
+      console.error('채팅 제출 중 오류:', error)
       setIsStreaming(false)
     }
   }
