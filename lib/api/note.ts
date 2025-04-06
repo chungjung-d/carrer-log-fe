@@ -20,6 +20,28 @@ export interface ChatListResponse {
   createdAt: string
 }
 
+export interface CreateChatRequest {
+  pre_chat_id?: string
+}
+
+export interface CreateChatResponse {
+  id: string
+}
+
+export interface GetChatResponse {
+  id: string
+  userId: string
+  title: string
+  chatData: {
+    messages: Array<{
+      role: string
+      content: string
+    }>
+  }
+  createdAt: string
+  updatedAt: string
+}
+
 const getAuthHeader = () => {
   const token = localStorage.getItem('access_token')
   return token ? { Authorization: `Bearer ${token}` } : {}
@@ -49,6 +71,34 @@ export const noteApi = {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('채팅 목록 조회 실패:', error.response?.data || error.message);
+      }
+      throw error;
+    }
+  },
+
+  createChat: async (data: CreateChatRequest): Promise<ApiResponse<CreateChatResponse>> => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/note/chat`, data, {
+        headers: getAuthHeader(),
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('채팅 생성 실패:', error.response?.data || error.message);
+      }
+      throw error;
+    }
+  },
+
+  getChat: async (id: string): Promise<ApiResponse<GetChatResponse>> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/note/chat/${id}`, {
+        headers: getAuthHeader(),
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('채팅 조회 실패:', error.response?.data || error.message);
       }
       throw error;
     }

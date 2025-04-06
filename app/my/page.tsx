@@ -19,6 +19,7 @@ export default function MyPage() {
   const { profile, isLoading: isProfileLoading } = useProfile()
   const [isTopicMode, setIsTopicMode] = useState(false)
   const [currentTopicIndex, setCurrentTopicIndex] = useState(0)
+  const [isCreatingChat, setIsCreatingChat] = useState(false)
   
   const { data: preChatsResponse, isLoading: isPreChatsLoading, error: preChatsError } = useQuery<ApiResponse<{ pre_chats: PreChat[] }>>({
     queryKey: ['preChats'],
@@ -35,6 +36,8 @@ export default function MyPage() {
     queryKey: ['chatList'],
     queryFn: () => noteApi.getChatList(),
   })
+
+  const currentTopic = preChatsResponse?.data?.pre_chats[currentTopicIndex]
 
   const hasTodayChat = useCallback(() => {
     if (!chatListResponse?.data) return false
@@ -59,9 +62,25 @@ export default function MyPage() {
     setCurrentTopicIndex((prev) => (prev + 1) % preChatsResponse.data.pre_chats.length)
   }, [preChatsResponse?.data?.pre_chats])
 
-  const handleCardClick = useCallback(() => {
-    router.push('/chat/CHAT_1')
+  const handleCreateChat = useCallback(async (preChatId?: string) => {
+    try {
+      setIsCreatingChat(true)
+      const response = await noteApi.createChat({ pre_chat_id: preChatId })
+      if (response.data) {
+        router.push(`/chat/${response.data.id}`)
+      }
+    } catch (error) {
+      console.error('채팅 생성 실패:', error)
+    } finally {
+      setIsCreatingChat(false)
+    }
   }, [router])
+
+  const handleCardClick = useCallback(() => {
+    if (currentTopic) {
+      handleCreateChat(currentTopic.id)
+    }
+  }, [currentTopic, handleCreateChat])
 
   if (isProfileLoading || isJobSatisfactionLoading || isPreChatsLoading || isChatListLoading) {
     return (
@@ -87,7 +106,6 @@ export default function MyPage() {
     )
   }
 
-  const currentTopic = preChatsResponse.data.pre_chats[currentTopicIndex]
   const jobSatisfaction = jobSatisfactionResponse.data
 
   const CATEGORIES = {
@@ -237,24 +255,26 @@ export default function MyPage() {
                   >
                     <CarouselContent className="-ml-2 md:-ml-4">
                       <CarouselItem className="pl-2 md:pl-4 basis-full">
-                        <div 
-                          className="relative bg-gradient-to-br from-white via-blue-50 to-gray-50 p-4 rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors min-h-[120px] flex flex-col transition-all duration-500 overflow-hidden cursor-pointer shadow-sm hover:shadow-md"
-                          onClick={handleCardClick}
-                        >
-                          <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1.5 h-16 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-full shadow-lg" />
-                          <div className="pl-4 flex flex-col flex-1 relative">
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleRefreshTopic()
-                              }}
-                              className="absolute top-0 right-0 p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                            >
-                              <RefreshCw className="w-5 h-5" />
-                            </button>
-                            <p className="text-sm font-medium text-gray-900 mt-16">{currentTopic.content}</p>
+                        {currentTopic && (
+                          <div 
+                            className="relative bg-gradient-to-br from-white via-blue-50 to-gray-50 p-4 rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors min-h-[120px] flex flex-col transition-all duration-500 overflow-hidden cursor-pointer shadow-sm hover:shadow-md"
+                            onClick={handleCardClick}
+                          >
+                            <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1.5 h-16 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-full shadow-lg" />
+                            <div className="pl-4 flex flex-col flex-1 relative">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleRefreshTopic()
+                                }}
+                                className="absolute top-0 right-0 p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                              >
+                                <RefreshCw className="w-5 h-5" />
+                              </button>
+                              <p className="text-sm font-medium text-gray-900 mt-16">{currentTopic.content}</p>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </CarouselItem>
                     </CarouselContent>
                   </Carousel>
@@ -289,8 +309,9 @@ export default function MyPage() {
                       </button>
                     )}
                     <button 
-                      onClick={() => router.push('/chat/CHAT_1')}
-                      className="w-full p-4 text-left bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors flex items-center gap-3 group"
+                      onClick={() => handleCreateChat()}
+                      disabled={isCreatingChat}
+                      className="w-full p-4 text-left bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors flex items-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
                         <PenLine className="w-5 h-5" />
