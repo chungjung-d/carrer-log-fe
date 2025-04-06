@@ -64,6 +64,10 @@ export interface ChatMessage {
   updated_at: string
 }
 
+export interface ChatMessageRequest {
+  message: string
+}
+
 const getAuthHeader = () => {
   const token = localStorage.getItem('access_token')
   return token ? { Authorization: `Bearer ${token}` } : {}
@@ -124,5 +128,24 @@ export const noteApi = {
       }
       throw error;
     }
+  },
+
+  sendChatMessage: async (chatId: string, message: string): Promise<Response> => {
+    const headers = new Headers()
+    const authHeader = getAuthHeader()
+    if (authHeader.Authorization) {
+      headers.append('Authorization', authHeader.Authorization)
+    }
+    headers.append('Accept', 'text/event-stream')
+
+    const response = await fetch(`${API_BASE_URL}/note/chat/${chatId}/stream?message=${encodeURIComponent(message)}`, {
+      headers,
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    return response
   },
 } 

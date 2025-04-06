@@ -285,7 +285,7 @@ export default function MyPage() {
                 </>
               ) : (
                 <>
-                  <SheetTitle className="text-base font-bold text-center mb-6">
+                  <SheetTitle className="text-lg font-bold text-center mb-6">
                     {hasTodayChat() ? '오늘의 기록' : '기록 시작하기'}
                   </SheetTitle>
                   <SheetDescription className="sr-only">

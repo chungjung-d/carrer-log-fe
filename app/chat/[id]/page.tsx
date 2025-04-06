@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { Send, User, Bot, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { noteApi } from '@/lib/api/note'
 
 const formatTime = (date: Date | string) => {
@@ -20,9 +20,12 @@ export default function ChatPage() {
   const params = useParams()
   const chatId = params.id as string
   const [newMessage, setNewMessage] = useState('')
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [streamingContent, setStreamingContent] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [composing, setComposing] = useState(false)
+  const queryClient = useQueryClient()
 
   const { data: chatResponse, isLoading } = useQuery({
     queryKey: ['chat', chatId],
@@ -33,19 +36,58 @@ export default function ChatPage() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [chat?.chatData.messages])
+  }, [chat?.chatData.messages, streamingContent])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newMessage.trim() || composing) return
+    if (!newMessage.trim() || composing || isStreaming) return
 
-    // TODO: API로 메시지 전송 구현
     setNewMessage('')
-    inputRef.current?.focus()
+    setIsStreaming(true)
+    setStreamingContent('')
+
+    try {
+      const response = await noteApi.sendChatMessage(chatId, newMessage)
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) {
+        throw new Error('No reader available')
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6)
+            if (data === '[DONE]') {
+              // 스트리밍 완료
+              setIsStreaming(false)
+              setStreamingContent('')
+              // 채팅 데이터 갱신
+              queryClient.invalidateQueries({ queryKey: ['chat', chatId] })
+              return
+            }
+
+            // 텍스트 데이터 직접 처리
+            setStreamingContent((prev) => prev + data)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error sending message:', error)
+      setIsStreaming(false)
+      setStreamingContent('')
+    }
   }
 
   if (isLoading) {
@@ -158,13 +200,30 @@ export default function ChatPage() {
                   <p className={`text-[11px] mt-1 ${
                     message.role === 'user' ? 'text-right' : ''
                   } text-gray-500`}>
-                    {formatTime(new Date(message.timestamp))}
+                    {formatTime(message.timestamp)}
                   </p>
                 )}
               </div>
             </div>
           )
         })}
+        {isStreaming && (
+          <div className="flex items-end gap-1">
+            <div className="flex flex-col items-start shrink-0">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-200">
+                <Bot className="w-4 h-4 text-gray-600" />
+              </div>
+            </div>
+            <div className="group relative max-w-[75%]">
+              <div className="px-3 py-2 break-words bg-white border border-gray-200 rounded-t-[22px] rounded-r-[22px] rounded-bl-[4px]">
+                <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
+                  {streamingContent}
+                  <span className="animate-pulse">▋</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -188,11 +247,12 @@ export default function ChatPage() {
                     handleSubmit(e)
                   }
                 }}
+                disabled={isStreaming}
               />
               <button
                 type="submit"
                 className="absolute top-1/2 -translate-y-1/2 right-3 flex items-center justify-center w-8 h-8 text-[#4C83FF] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!newMessage.trim() || composing}
+                disabled={!newMessage.trim() || composing || isStreaming}
               >
                 <Send className="w-5 h-5" />
               </button>
