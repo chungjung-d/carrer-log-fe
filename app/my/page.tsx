@@ -4,12 +4,12 @@ import { TotalScoreCard } from '@/components/charts/TotalScoreCard'
 import { DetailScoreCard } from '@/components/charts/DetailScoreCard'
 import { BalanceChartCard } from '@/components/charts/BalanceChartCard'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
-import { Plus, PenLine, Sparkles, ChevronRight, ArrowLeft, RefreshCw } from 'lucide-react'
+import { Plus, PenLine, Sparkles, ChevronRight, ArrowLeft, RefreshCw, MessageSquare } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetHeader } from '@/components/ui/sheet'
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { jobSatisfactionApi, CurrentJobSatisfactionResponse } from '@/lib/api/job-satisfaction'
-import { noteApi, PreChat } from '@/lib/api/note'
+import { noteApi, PreChat, ChatListResponse } from '@/lib/api/note'
 import { ApiResponse } from '@/lib/api/types'
 import { useQuery } from '@tanstack/react-query'
 import { useProfile } from '@/hooks/useProfile'
@@ -31,6 +31,29 @@ export default function MyPage() {
     queryFn: () => jobSatisfactionApi.getCurrentJobSatisfaction(),
   })
 
+  const { data: chatListResponse, isLoading: isChatListLoading } = useQuery<ApiResponse<ChatListResponse[]>>({
+    queryKey: ['chatList'],
+    queryFn: () => noteApi.getChatList(),
+  })
+
+  const hasTodayChat = useCallback(() => {
+    if (!chatListResponse?.data) return false
+    const today = new Date().toISOString().split('T')[0]
+    return chatListResponse.data.some(chat => {
+      const chatDate = new Date(chat.createdAt).toISOString().split('T')[0]
+      return chatDate === today
+    })
+  }, [chatListResponse?.data])
+
+  const getTodayChat = useCallback(() => {
+    if (!chatListResponse?.data) return null
+    const today = new Date().toISOString().split('T')[0]
+    return chatListResponse.data.find(chat => {
+      const chatDate = new Date(chat.createdAt).toISOString().split('T')[0]
+      return chatDate === today
+    })
+  }, [chatListResponse?.data])
+
   const handleRefreshTopic = useCallback(() => {
     if (!preChatsResponse?.data?.pre_chats) return
     setCurrentTopicIndex((prev) => (prev + 1) % preChatsResponse.data.pre_chats.length)
@@ -40,7 +63,7 @@ export default function MyPage() {
     router.push('/chat/CHAT_1')
   }, [router])
 
-  if (isProfileLoading || isJobSatisfactionLoading || isPreChatsLoading) {
+  if (isProfileLoading || isJobSatisfactionLoading || isPreChatsLoading || isChatListLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -148,6 +171,39 @@ export default function MyPage() {
         </Carousel>
       </div>
 
+      {/* 채팅 리스트 */}
+      {chatListResponse?.data && chatListResponse.data.length > 0 && (
+        <div className="max-w-md mx-auto px-4 py-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">최근 채팅 기록</h2>
+          <div className="space-y-3">
+            {chatListResponse.data.map((chat) => (
+              <div
+                key={chat.id}
+                className="bg-white p-4 rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors cursor-pointer"
+                onClick={() => router.push(`/chat/${chat.id}`)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">{chat.title}</div>
+                    <div className="text-sm text-gray-500">
+                      {new Date(chat.createdAt).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 플로팅 추가 버튼 */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
         <Sheet onOpenChange={() => setIsTopicMode(false)}>
@@ -206,12 +262,32 @@ export default function MyPage() {
               ) : (
                 <>
                   <SheetTitle className="text-xl font-bold text-center mb-6">
-                    기록 시작하기
+                    {hasTodayChat() ? '오늘의 기록' : '기록 시작하기'}
                   </SheetTitle>
                   <SheetDescription className="sr-only">
-                    자유롭게 작성하거나 추천 주제로 기록할 수 있습니다.
+                    {hasTodayChat() ? '오늘의 기록을 이어서 작성하거나 새로운 기록을 시작할 수 있습니다.' : '자유롭게 작성하거나 추천 주제로 기록할 수 있습니다.'}
                   </SheetDescription>
                   <div className="space-y-3">
+                    {hasTodayChat() && (
+                      <button 
+                        onClick={() => {
+                          const todayChat = getTodayChat()
+                          if (todayChat) {
+                            router.push(`/chat/${todayChat.id}`)
+                          }
+                        }}
+                        className="w-full p-4 text-left bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors flex items-center gap-3 group"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                          <MessageSquare className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">오늘의 기록 이어하기</div>
+                          <div className="text-sm text-gray-500">오늘 작성한 기록을 이어서 작성해보세요</div>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                      </button>
+                    )}
                     <button 
                       onClick={() => router.push('/chat/CHAT_1')}
                       className="w-full p-4 text-left bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors flex items-center gap-3 group"
