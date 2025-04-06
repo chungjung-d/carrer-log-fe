@@ -5,11 +5,11 @@ import { ChevronLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { useProfileStore } from '@/store/profile'
+import { useProfile } from '@/hooks/useProfile'
 
 export default function SignupPage() {
   const router = useRouter()
-  const { createProfile, isLoading, error } = useProfileStore()
+  const { createProfile, isCreating, createError } = useProfile()
   const [name, setName] = useState('')
   const [organization, setOrganization] = useState('')
 
@@ -40,9 +40,9 @@ export default function SignupPage() {
             name && organization ? "text-[#007AFF]" : "text-[#007AFF]/30"
           )}
           onClick={handleNext}
-          disabled={isLoading}
+          disabled={isCreating}
         >
-          {isLoading ? '처리 중...' : '다음'}
+          {isCreating ? '처리 중...' : '다음'}
         </button>
       </nav>
 
@@ -72,9 +72,9 @@ export default function SignupPage() {
           </div>
         </div>
 
-        {error && (
+        {createError && (
           <div className="mt-4 text-red-500 text-sm">
-            {error}
+            {createError.message}
           </div>
         )}
       </div>

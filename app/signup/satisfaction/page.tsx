@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { jobSatisfactionApi } from '@/lib/api/job-satisfaction'
 
 type SatisfactionValues = {
   업무: number
@@ -33,6 +35,7 @@ const SLIDER_COLORS = {
 }
 
 export default function SatisfactionPage() {
+  const router = useRouter()
   const [values, setValues] = useState<SatisfactionValues>({
     업무: 0,
     보상: 0,
@@ -46,6 +49,22 @@ export default function SatisfactionPage() {
     setValues(prev => ({ ...prev, [key]: value }))
   }
 
+  const handleNext = async () => {
+    try {
+      await jobSatisfactionApi.initializeJobSatisfaction({
+        Workload: values.업무,
+        Compensation: values.보상,
+        Growth: values.성장,
+        WorkEnvironment: values.환경,
+        WorkRelationships: values.관계,
+        WorkValues: values.가치,
+      });
+      router.push('/my');
+    } catch (error) {
+      console.error('Error initializing job satisfaction:', error);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-gray-50">
       {/* 상단 네비게이션 */}
@@ -53,7 +72,10 @@ export default function SatisfactionPage() {
         <Link href="/signup/importance" className="text-black">
           <ChevronLeft className="w-6 h-6" />
         </Link>
-        <button className="text-[#007AFF] font-medium">
+        <button 
+          onClick={handleNext}
+          className="text-[#007AFF] font-medium"
+        >
           다음
         </button>
       </nav>

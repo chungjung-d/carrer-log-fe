@@ -1,4 +1,6 @@
 import axios from 'axios';
+// import Cookies from 'js-cookie';
+import { ApiResponse } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -9,6 +11,16 @@ export interface KakaoLoginResponse {
     email: string;
   };
   is_new_user: boolean;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
 }
 
 export const authApi = {
@@ -26,5 +38,31 @@ export const authApi = {
       `${API_BASE_URL}/auth/kakao/callback?code=${code}`
     );
     return response.data;
+  },
+
+  login: async (data: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
+    try {
+      const response = await axios.post<ApiResponse<LoginResponse>>(
+        `${API_BASE_URL}/auth/login`,
+        data,
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Axios error details:', {
+          message: error.message,
+          response: error.response,
+          config: error.config
+        });
+        throw error;
+      }
+      throw error;
+    }
   },
 }; 
