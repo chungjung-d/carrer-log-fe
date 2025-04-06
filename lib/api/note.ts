@@ -30,16 +30,20 @@ export interface CreateChatResponse {
 
 export interface GetChatResponse {
   id: string
-  userId: string
   title: string
-  chatData: {
-    messages: Array<{
-      role: string
-      content: string
-    }>
-  }
-  createdAt: string
-  updatedAt: string
+  created_at: string
+  updated_at: string
+  messages: ChatMessage[]
+}
+
+export type MessageRole = 'user' | 'assistant'
+
+export interface ChatMessage {
+  id: string
+  content: string
+  role: MessageRole
+  created_at: string
+  updated_at: string
 }
 
 const getAuthHeader = () => {

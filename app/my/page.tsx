@@ -64,6 +64,14 @@ export default function MyPage() {
 
   const handleCreateChat = useCallback(async (preChatId?: string) => {
     try {
+      if (hasTodayChat()) {
+        const todayChat = getTodayChat()
+        if (todayChat) {
+          router.push(`/chat/${todayChat.id}`)
+        }
+        return
+      }
+
       setIsCreatingChat(true)
       const response = await noteApi.createChat({ pre_chat_id: preChatId })
       if (response.data) {
@@ -74,7 +82,7 @@ export default function MyPage() {
     } finally {
       setIsCreatingChat(false)
     }
-  }, [router])
+  }, [router, hasTodayChat, getTodayChat])
 
   const handleCardClick = useCallback(() => {
     if (currentTopic) {
@@ -142,10 +150,6 @@ export default function MyPage() {
   }
 
   const AVERAGE_SCORE = jobSatisfaction.score
-
-  console.log('Job Satisfaction Data:', jobSatisfaction)
-  console.log('Categories:', CATEGORIES)
-  console.log('Average Score:', AVERAGE_SCORE)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -281,14 +285,14 @@ export default function MyPage() {
                 </>
               ) : (
                 <>
-                  <SheetTitle className="text-xl font-bold text-center mb-6">
+                  <SheetTitle className="text-base font-bold text-center mb-6">
                     {hasTodayChat() ? '오늘의 기록' : '기록 시작하기'}
                   </SheetTitle>
                   <SheetDescription className="sr-only">
                     {hasTodayChat() ? '오늘의 기록을 이어서 작성하거나 새로운 기록을 시작할 수 있습니다.' : '자유롭게 작성하거나 추천 주제로 기록할 수 있습니다.'}
                   </SheetDescription>
                   <div className="space-y-3">
-                    {hasTodayChat() && (
+                    {hasTodayChat() ? (
                       <button 
                         onClick={() => {
                           const todayChat = getTodayChat()
@@ -307,33 +311,36 @@ export default function MyPage() {
                         </div>
                         <ChevronRight className="w-5 h-5 text-gray-400" />
                       </button>
+                    ) : (
+                      <>
+                        <button 
+                          onClick={() => handleCreateChat()}
+                          disabled={isCreatingChat}
+                          className="w-full p-4 text-left bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors flex items-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                            <PenLine className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">자유롭게 기록하기</div>
+                            <div className="text-sm text-gray-500">나만의 방식으로 기록해보세요</div>
+                          </div>
+                        </button>
+                        <button 
+                          className="w-full p-4 text-left bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors flex items-center gap-3 group"
+                          onClick={() => setIsTopicMode(true)}
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                            <Sparkles className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">추천 주제로 기록하기</div>
+                            <div className="text-sm text-gray-500">오늘의 추천 주제로 시작해보세요</div>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-gray-400" />
+                        </button>
+                      </>
                     )}
-                    <button 
-                      onClick={() => handleCreateChat()}
-                      disabled={isCreatingChat}
-                      className="w-full p-4 text-left bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors flex items-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                        <PenLine className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">자유롭게 기록하기</div>
-                        <div className="text-sm text-gray-500">나만의 방식으로 기록해보세요</div>
-                      </div>
-                    </button>
-                    <button 
-                      className="w-full p-4 text-left bg-white rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors flex items-center gap-3 group"
-                      onClick={() => setIsTopicMode(true)}
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                        <Sparkles className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">추천 주제로 기록하기</div>
-                        <div className="text-sm text-gray-500">오늘의 추천 주제로 시작해보세요</div>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    </button>
                   </div>
                 </>
               )}
