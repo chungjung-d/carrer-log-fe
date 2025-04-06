@@ -70,7 +70,10 @@ export interface ChatMessageRequest {
 
 const getAuthHeader = () => {
   const token = localStorage.getItem('access_token')
-  return token ? { Authorization: `Bearer ${token}` } : {}
+  if (!token) {
+    throw new Error('No access token found')
+  }
+  return { Authorization: `Bearer ${token}` }
 }
 
 export const noteApi = {
@@ -131,21 +134,42 @@ export const noteApi = {
   },
 
   sendChatMessage: async (chatId: string, message: string): Promise<Response> => {
-    const headers = new Headers()
     const authHeader = getAuthHeader()
-    if (authHeader.Authorization) {
-      headers.append('Authorization', authHeader.Authorization)
-    }
-    headers.append('Accept', 'text/event-stream')
-
-    const response = await fetch(`${API_BASE_URL}/note/chat/${chatId}/stream?message=${encodeURIComponent(message)}`, {
-      headers,
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+    const headers: Record<string, string> = {
+      'Accept': 'text/event-stream',
+      'Authorization': authHeader.Authorization
     }
 
-    return response
+    const url = `${API_BASE_URL}/note/chat/${chatId}/stream?message=${encodeURIComponent(message)}`
+    console.log('Request URL:', url)
+    console.log('Request Headers:', headers)
+
+    try {
+      const response = await fetch(url, {
+        headers,
+        method: 'GET',
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Response error:', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          body: errorText
+        })
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
+      }
+
+      return response
+    } catch (error) {
+      console.error('Fetch error:', {
+        message: error instanceof Error ? error.message : String(error),
+        url,
+        headers
+      })
+      throw error
+    }
   },
 } 

@@ -59,26 +59,24 @@ export default function ChatPage() {
         throw new Error('No reader available')
       }
 
+      let buffer = ''
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n')
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6)
             if (data === '[DONE]') {
-              // 스트리밍 완료
               setIsStreaming(false)
               setStreamingContent('')
-              // 채팅 데이터 갱신
               queryClient.invalidateQueries({ queryKey: ['chat', chatId] })
               return
             }
-
-            // 텍스트 데이터 직접 처리
             setStreamingContent((prev) => prev + data)
           }
         }
