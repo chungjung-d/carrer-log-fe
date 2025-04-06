@@ -4,9 +4,9 @@ import { TotalScoreCard } from '@/components/charts/TotalScoreCard'
 import { DetailScoreCard } from '@/components/charts/DetailScoreCard'
 import { BalanceChartCard } from '@/components/charts/BalanceChartCard'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
-import { Plus, PenLine, Sparkles, ChevronRight, ArrowLeft } from 'lucide-react'
+import { Plus, PenLine, Sparkles, ChevronRight, ArrowLeft, RefreshCw } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetHeader } from '@/components/ui/sheet'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { jobSatisfactionApi, CurrentJobSatisfactionResponse } from '@/lib/api/job-satisfaction'
 import { ApiResponse } from '@/lib/api/types'
@@ -38,56 +38,20 @@ export default function MyPage() {
   const { profile, isLoading: isProfileLoading } = useProfile()
   const [isTopicMode, setIsTopicMode] = useState(false)
   const [currentTopic, setCurrentTopic] = useState(MOCK_TOPICS[0])
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [pressIntensity, setPressIntensity] = useState(0)
-  const [isExploding, setIsExploding] = useState(false)
-  const [canNavigateToChat, setCanNavigateToChat] = useState(true)
-  const animationTimer = useRef<number | null>(null)
   const { data: jobSatisfactionResponse, isLoading: isJobSatisfactionLoading } = useQuery<ApiResponse<CurrentJobSatisfactionResponse>>({
     queryKey: ['jobSatisfaction'],
     queryFn: () => jobSatisfactionApi.getCurrentJobSatisfaction(),
   })
 
-  const handlePressStart = useCallback(() => {
-    setPressIntensity(0)
-    setIsExploding(false)
-    setCanNavigateToChat(true)
-    
-    animationTimer.current = window.setInterval(() => {
-      setPressIntensity(prev => {
-        if (prev >= 100) {
-          if (animationTimer.current) {
-            window.clearInterval(animationTimer.current)
-          }
-          setIsExploding(true)
-          setCanNavigateToChat(false)
-          setTimeout(() => {
-            setIsRefreshing(true)
-            const currentIndex = MOCK_TOPICS.findIndex(t => t.id === currentTopic.id)
-            const nextIndex = (currentIndex + 1) % MOCK_TOPICS.length
-            setCurrentTopic(MOCK_TOPICS[nextIndex])
-            setIsExploding(false)
-            setIsRefreshing(false)
-            setTimeout(() => {
-              setCanNavigateToChat(true)
-            }, 1000)
-          }, 300)
-          return 0
-        }
-        return prev + 3
-      })
-    }, 20)
+  const handleRefreshTopic = useCallback(() => {
+    const currentIndex = MOCK_TOPICS.findIndex(t => t.id === currentTopic.id)
+    const nextIndex = (currentIndex + 1) % MOCK_TOPICS.length
+    setCurrentTopic(MOCK_TOPICS[nextIndex])
   }, [currentTopic])
 
-  const handlePressEnd = useCallback(() => {
-    if (animationTimer.current) {
-      window.clearInterval(animationTimer.current)
-      if (pressIntensity < 80 && canNavigateToChat) {
-        router.push('/chat/CHAT_1')
-      }
-      setPressIntensity(0)
-    }
-  }, [pressIntensity, router, canNavigateToChat])
+  const handleCardClick = useCallback(() => {
+    router.push('/chat/CHAT_1')
+  }, [router])
 
   if (isProfileLoading || isJobSatisfactionLoading) {
     return (
@@ -222,30 +186,21 @@ export default function MyPage() {
                     <CarouselContent className="-ml-2 md:-ml-4">
                       <CarouselItem className="pl-2 md:pl-4 basis-full">
                         <div 
-                          className={`relative bg-white p-4 rounded-2xl border border-gray-100 min-h-[140px] flex flex-col transition-all duration-300 overflow-hidden
-                            ${isExploding ? 'scale-105' : ''} 
-                            ${isRefreshing ? 'scale-95 opacity-50' : ''}`}
-                          onMouseDown={handlePressStart}
-                          onMouseUp={handlePressEnd}
-                          onMouseLeave={handlePressEnd}
-                          onTouchStart={handlePressStart}
-                          onTouchEnd={handlePressEnd}
+                          className="relative bg-gradient-to-br from-white to-gray-50 p-4 rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors min-h-[120px] flex flex-col transition-all duration-500 overflow-hidden cursor-pointer shadow-sm hover:shadow-md"
+                          onClick={handleCardClick}
                         >
-                          <div 
-                            className="absolute inset-0 bg-blue-500 transition-all duration-200"
-                            style={{ 
-                              opacity: pressIntensity / 100,
-                            }} 
-                          />
-                          <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-12 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full" />
+                          <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1.5 h-16 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-full shadow-lg" />
                           <div className="pl-4 flex flex-col flex-1 relative">
-                            <p className="text-base font-medium text-gray-900 mb-3 flex-1">{currentTopic.content}</p>
                             <button 
-                              className="text-sm text-blue-500 hover:text-blue-600 font-medium transition-colors flex items-center gap-1"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleRefreshTopic()
+                              }}
+                              className="absolute top-0 right-0 p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                             >
-                              이 주제로 기록하기
-                              <ChevronRight className="w-4 h-4" />
+                              <RefreshCw className="w-5 h-5" />
                             </button>
+                            <p className="text-sm font-medium text-gray-900 mt-16">{currentTopic.content}</p>
                           </div>
                         </div>
                       </CarouselItem>
