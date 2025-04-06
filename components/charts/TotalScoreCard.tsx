@@ -15,7 +15,7 @@ export function TotalScoreCard({ score, categories }: TotalScoreCardProps) {
               <div className="w-40 h-40 rounded-full bg-gradient-to-r from-blue-500/20 to-indigo-500/20 blur-2xl transform scale-150" />
             </div>
             <h2 className="text-8xl font-bold text-center mb-3 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              {score}
+              {score.toFixed(1)}
             </h2>
           </div>
           <div className="mt-6 text-center">

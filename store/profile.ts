@@ -1,22 +1,14 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { profileApi, UserProfile } from '@/lib/api/profile';
+import { Profile } from '@/lib/api/profile';
 
 interface ProfileState {
-  profile: UserProfile | null;
-  setProfile: (profile: UserProfile | null) => void;
+  profile: Profile | null;
+  setProfile: (profile: Profile) => void;
   clearProfile: () => void;
 }
 
-export const useProfileStore = create<ProfileState>()(
-  persist(
-    (set) => ({
-      profile: null,
-      setProfile: (profile) => set({ profile }),
-      clearProfile: () => set({ profile: null }),
-    }),
-    {
-      name: 'profile-storage',
-    }
-  )
-); 
+export const useProfileStore = create<ProfileState>((set) => ({
+  profile: null,
+  setProfile: (profile) => set({ profile }),
+  clearProfile: () => set({ profile: null }),
+})); 

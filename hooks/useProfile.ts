@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query'
-import { profileApi, CreateProfileRequest, Profile } from '@/lib/api/profile'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { profileApi, Profile } from '@/lib/api/profile'
 import { ApiResponse } from '@/lib/api/types'
 import { useProfileStore } from '@/store/profile'
 
@@ -7,22 +7,18 @@ export const useProfile = () => {
   const queryClient = useQueryClient()
   const { setProfile } = useProfileStore()
 
-  const queryOptions: UseQueryOptions<ApiResponse<Profile>> = {
+  const { data: profileResponse, isLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: profileApi.getProfile,
-  }
+  })
 
-  const { data: profileResponse, isLoading } = useQuery<ApiResponse<Profile>>(queryOptions)
-
-  const mutationOptions: UseMutationOptions<ApiResponse<Profile>, Error, CreateProfileRequest> = {
+  const createProfileMutation = useMutation({
     mutationFn: profileApi.createProfile,
     onSuccess: (data: ApiResponse<Profile>) => {
       setProfile(data.data)
       queryClient.setQueryData(['profile'], data)
     },
-  }
-
-  const createProfileMutation = useMutation<ApiResponse<Profile>, Error, CreateProfileRequest>(mutationOptions)
+  })
 
   return {
     profile: profileResponse?.data,
