@@ -5,6 +5,7 @@ import { ChevronLeft } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { jobSatisfactionApi } from '@/lib/api/job-satisfaction'
 
 type ImportanceValues = {
   업무: number
@@ -61,9 +62,21 @@ export default function ImportancePage() {
     }
   }
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (calculateTotal(values) === 100) {
-      router.push('/signup/satisfaction')
+      try {
+        await jobSatisfactionApi.createImportance({
+          Workload: values.업무,
+          Compensation: values.보상,
+          Growth: values.성장,
+          WorkEnvironment: values.환경,
+          WorkRelationships: values.관계,
+          WorkValues: values.가치,
+        });
+        router.push('/signup/satisfaction');
+      } catch (error) {
+        console.error('Error creating job satisfaction importance:', error);
+      }
     }
   }
 
