@@ -80,112 +80,129 @@ export default function ChatPage() {
     }
 
     console.log('사용자 메시지 추가:', userMessage)
-    const updatedMessages = [...messagesRef.current, userMessage]
-    messagesRef.current = updatedMessages
-    setMessagesWithStreaming(updatedMessages)
+    setMessagesWithStreaming(prev => [...prev, userMessage])
     setNewMessage('')
     setIsStreaming(true)
 
     try {
       console.log('서버 요청 시작')
-      const response = await noteApi.sendChatMessage(chatId, newMessage)
-      console.log('서버 응답 받음:', response)
+      const eventSource = await noteApi.sendChatMessage(chatId, newMessage)
       
-      const reader = response.body?.getReader()
-      const decoder = new TextDecoder()
+      eventSource.onmessage = (event) => {
+        const data = event.data
+        const receiveTime = new Date().toISOString()
+        console.log('=== 메시지 이벤트 ===')
+        console.log('이벤트 타입:', event.type)
+        console.log('이벤트 데이터:', data)
+        console.log('이벤트 수신 시간:', receiveTime)
+        console.log('이벤트 소스:', eventSource.url)
+        console.log('이벤트 소스 상태:', eventSource.readyState)
+        console.log('청크 크기:', data.length)
+        console.log('===================')
 
-      if (!reader) {
-        throw new Error('No reader available')
-      }
-
-      let buffer = ''
-      console.log('스트리밍 시작')
-      while (true) {
-        const { done, value } = await reader.read()
-        console.log('청크 받음:', { done, value: value ? '데이터 있음' : '없음' })
-        
-        if (done) {
-          console.log('스트리밍 완료')
-          break
-        }
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        console.log('버퍼 처리:', {
-          bufferSize: buffer.length,
-          linesCount: lines.length,
-          lines: lines
-        })
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6)
-            console.log('데이터 처리:', data)
-            
-            if (data === '[DONE]') {
-              console.log('스트리밍 종료 신호 수신')
-              setIsStreaming(false)
-              queryClient.setQueryData<ApiResponse<GetChatResponse>>(['chat', chatId], (old) => {
-                if (!old?.data) return old
-                return {
-                  ...old,
-                  data: {
-                    ...old.data,
-                    chatData: {
-                      ...old.data.chatData,
-                      messages: messagesRef.current,
-                      metadata: {
-                        ...old.data.chatData.metadata,
-                        message_count: messagesRef.current.length,
-                        last_message_at: new Date().toISOString()
-                      }
-                    }
+        if (data === '[DONE]') {
+          console.log('=== 스트리밍 완료 ===')
+          console.log('완료 시간:', new Date().toISOString())
+          console.log('===================')
+          setIsStreaming(false)
+          eventSource.close()
+          
+          queryClient.setQueryData<ApiResponse<GetChatResponse>>(['chat', chatId], (old) => {
+            if (!old?.data) return old
+            return {
+              ...old,
+              data: {
+                ...old.data,
+                chatData: {
+                  ...old.data.chatData,
+                  messages: messagesRef.current,
+                  metadata: {
+                    ...old.data.chatData.metadata,
+                    message_count: messagesRef.current.length,
+                    last_message_at: new Date().toISOString()
                   }
                 }
-              })
-              return
+              }
             }
+          })
+          return
+        }
 
-            console.log('상태 업데이트 전:', messagesWithStreaming)
-            const currentMessages = messagesRef.current
-            const lastMessage = currentMessages[currentMessages.length - 1]
-            
-            let updatedMessages: Message[]
-            if (lastMessage?.role === 'assistant' && lastMessage.id.startsWith('streaming-')) {
-              updatedMessages = [
-                ...currentMessages.slice(0, -1),
-                {
-                  ...lastMessage,
-                  content: lastMessage.content + data
-                }
-              ]
-            } else {
-              updatedMessages = [
-                ...currentMessages,
-                {
-                  id: `streaming-${Date.now()}`,
-                  role: 'assistant' as const,
-                  content: data,
-                  timestamp: new Date().toISOString()
-                }
-              ]
+        const currentMessages = messagesRef.current
+        const lastMessage = currentMessages[currentMessages.length - 1]
+        
+        let updatedMessages: Message[]
+        if (lastMessage?.role === 'assistant' && lastMessage.id.startsWith('streaming-')) {
+          console.log('=== 기존 메시지 업데이트 ===')
+          console.log('이전 내용:', lastMessage.content)
+          console.log('추가될 내용:', data)
+          console.log('업데이트 시간:', new Date().toISOString())
+          console.log('===================')
+          
+          updatedMessages = [
+            ...currentMessages.slice(0, -1),
+            {
+              ...lastMessage,
+              content: lastMessage.content + data
             }
+          ]
+        } else {
+          console.log('=== 새 메시지 생성 ===')
+          console.log('새 메시지 내용:', data)
+          console.log('생성 시간:', new Date().toISOString())
+          console.log('===================')
+          
+          updatedMessages = [
+            ...currentMessages,
+            {
+              id: `streaming-${Date.now()}`,
+              role: 'assistant' as const,
+              content: data,
+              timestamp: new Date().toISOString()
+            }
+          ]
+        }
 
-            // ref와 state를 동시에 업데이트
-            messagesRef.current = updatedMessages
-            setMessagesWithStreaming(updatedMessages)
+        console.log('=== 메시지 업데이트 ===')
+        console.log('이전 메시지:', currentMessages)
+        console.log('업데이트된 메시지:', updatedMessages)
+        console.log('업데이트 시간:', new Date().toISOString())
+        console.log('===================')
 
-            console.log('상태 업데이트 후:', messagesWithStreaming)
+        messagesRef.current = updatedMessages
+        setMessagesWithStreaming(updatedMessages)
+        
+        // 스크롤을 즉시 처리
+        requestAnimationFrame(() => {
+          console.log('=== 스크롤 업데이트 ===')
+          console.log('스크롤 시간:', new Date().toISOString())
+          console.log('===================')
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        })
+      }
 
-            requestAnimationFrame(() => {
-              console.log('스크롤 업데이트')
-              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-            })
-          }
+      eventSource.onerror = (error) => {
+        console.error('=== EventSource 오류 ===')
+        console.error('오류 시간:', new Date().toISOString())
+        console.error('오류 내용:', error)
+        console.error('이벤트 소스 상태:', eventSource.readyState)
+        console.error('이벤트 소스 URL:', eventSource.url)
+        console.error('===================')
+        
+        if (eventSource.readyState === EventSource.CLOSED) {
+          setIsStreaming(false)
+          eventSource.close()
         }
       }
+
+      // 연결이 열렸을 때의 처리
+      eventSource.onopen = () => {
+        console.log('=== EventSource 연결됨 ===')
+        console.log('연결 시간:', new Date().toISOString())
+        console.log('연결 URL:', eventSource.url)
+        console.log('===================')
+      }
+
     } catch (error) {
       console.error('채팅 제출 중 오류:', error)
       setIsStreaming(false)

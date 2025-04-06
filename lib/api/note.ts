@@ -133,41 +133,24 @@ export const noteApi = {
     }
   },
 
-  sendChatMessage: async (chatId: string, message: string): Promise<Response> => {
+  sendChatMessage: async (chatId: string, message: string): Promise<EventSource> => {
     const authHeader = getAuthHeader()
-    const headers: Record<string, string> = {
-      'Accept': 'text/event-stream',
-      'Authorization': authHeader.Authorization
-    }
-
+    const token = authHeader.Authorization.split(' ')[1]
     const url = `${API_BASE_URL}/note/chat/${chatId}/stream?message=${encodeURIComponent(message)}`
     console.log('Request URL:', url)
-    console.log('Request Headers:', headers)
 
     try {
-      const response = await fetch(url, {
-        headers,
-        method: 'GET',
-        credentials: 'include'
+      document.cookie = `access_token=${token}; path=/; SameSite=Lax`
+
+      const eventSource = new EventSource(url, {
+        withCredentials: true
       })
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Response error:', {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: errorText
-        })
-        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
-      }
-
-      return response
+      return eventSource
     } catch (error) {
-      console.error('Fetch error:', {
+      console.error('EventSource 생성 중 오류:', {
         message: error instanceof Error ? error.message : String(error),
-        url,
-        headers
+        url
       })
       throw error
     }
