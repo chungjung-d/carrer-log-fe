@@ -13,7 +13,7 @@ export interface Profile {
 
 export interface CreateProfileRequest {
   name: string;
-  nickname: string;
+  nickname?: string | null;
   organization: string;
 }
 
