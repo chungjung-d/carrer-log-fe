@@ -37,12 +37,12 @@ const SLIDER_COLORS = {
 export default function ImportancePage() {
   const router = useRouter()
   const [values, setValues] = useState<ImportanceValues>({
-    업무: 0,
-    보상: 0,
-    성장: 0,
-    환경: 0,
-    관계: 0,
-    가치: 0
+    업무: 1,
+    보상: 1,
+    성장: 1,
+    환경: 1,
+    관계: 1,
+    가치: 1
   })
 
   const calculateTotal = (currentValues: ImportanceValues) => {
@@ -173,7 +173,7 @@ export default function ImportancePage() {
                   <div className="relative px-1">
                     <input
                       type="range"
-                      min="0"
+                      min="1"
                       max="100"
                       value={value}
                       onChange={(e) => handleChange(key as keyof ImportanceValues, Number(e.target.value))}
