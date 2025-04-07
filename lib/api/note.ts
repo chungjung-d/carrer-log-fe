@@ -138,19 +138,34 @@ export const noteApi = {
     const token = authHeader.Authorization.split(' ')[1]
     const url = `${API_BASE_URL}/note/chat/${chatId}/stream?message=${encodeURIComponent(message)}`
     console.log('Request URL:', url)
+    console.log('Current cookies:', document.cookie)
 
     try {
+      // 쿠키로 토큰 전달
       document.cookie = `access_token=${token}; path=/; SameSite=Lax`
+      console.log('After setting cookie:', document.cookie)
 
       const eventSource = new EventSource(url, {
         withCredentials: true
       })
 
+      // EventSource 연결 상태 로깅
+      eventSource.onopen = () => {
+        console.log('EventSource connection opened')
+        console.log('Current cookies on open:', document.cookie)
+      }
+
+      eventSource.onerror = (error) => {
+        console.error('EventSource error:', error)
+        console.log('Current cookies on error:', document.cookie)
+      }
+
       return eventSource
     } catch (error) {
       console.error('EventSource 생성 중 오류:', {
         message: error instanceof Error ? error.message : String(error),
-        url
+        url,
+        cookies: document.cookie
       })
       throw error
     }
