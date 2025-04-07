@@ -136,13 +136,13 @@ export const noteApi = {
   sendChatMessage: async (chatId: string, message: string): Promise<EventSource> => {
     const authHeader = getAuthHeader()
     const token = authHeader.Authorization.split(' ')[1]
-    const url = `${API_BASE_URL}/note/chat/${chatId}/stream?message=${encodeURIComponent(message)}`
+    const url = `${API_BASE_URL}/note/chat/${chatId}/stream?message=${encodeURIComponent(message)}&token=${encodeURIComponent(token)}`
     console.log('Request URL:', url)
     console.log('Current cookies:', document.cookie)
 
     try {
-      // 쿠키로 토큰 전달
-      document.cookie = `access_token=${token}; path=/; SameSite=Lax`
+      // 쿠키로 토큰 전달 (공통 상위 도메인 사용)
+      document.cookie = `access_token=${token}; path=/; domain=.chungjung.click; SameSite=Lax`
       console.log('After setting cookie:', document.cookie)
 
       const eventSource = new EventSource(url, {
