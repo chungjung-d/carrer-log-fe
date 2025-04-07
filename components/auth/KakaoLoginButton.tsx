@@ -8,20 +8,23 @@ export const KakaoLoginButton = () => {
   return (
     <button
       onClick={login}
-      className="flex items-center justify-center w-full px-4 py-2 space-x-2 text-black bg-yellow-400 rounded-lg hover:bg-yellow-500"
+      className="group flex items-center justify-center w-full px-6 py-3 space-x-3 text-[#3A1D1D] bg-[#FEE500] rounded-xl hover:bg-[#FEE500]/90 transition-all duration-200 shadow-sm hover:shadow-md"
     >
-      <svg
-        className="w-6 h-6"
-        viewBox="0 0 24 24"
-        fill="currentColor"
+      <svg 
+        width="22" 
+        height="21" 
+        viewBox="0 0 22 21" 
+        fill="none" 
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path
-          d="M12 4C6.48 4 2 7.48 2 12C2 14.9 3.75 17.4 6.5 18.7C6.2 17.7 6 16.6 6 15.5C6 12.4 8.4 9.9 11.5 9.9C14.6 9.9 17 12.4 17 15.5C17 16.6 16.8 17.7 16.5 18.7C19.25 17.4 21 14.9 21 12C21 7.48 16.52 4 12 4Z"
+        <path 
+          fillRule="evenodd" 
+          clipRule="evenodd" 
+          d="M11 0C5.0748 0 0 4.0534 0 9.0566C0 12.0952 1.9782 14.7433 5.0106 16.2384L3.7582 20.5672C3.68814 20.8072 3.98508 21.0077 4.19092 20.8728L9.2942 17.5163C9.8518 17.5723 10.4214 17.6021 11 17.6021C16.9252 17.6021 22 13.5487 22 8.54552C22 3.54231 16.9252 0 11 0Z" 
           fill="currentColor"
         />
       </svg>
-      <span>카카오로 로그인</span>
+      <span className="font-medium text-[15px]">카카오톡으로 시작하기</span>
     </button>
   );
 }; 
