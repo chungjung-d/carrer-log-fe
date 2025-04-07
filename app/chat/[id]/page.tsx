@@ -1,7 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Send, User, Bot, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -45,6 +45,13 @@ export default function ChatPage() {
   })
 
   const chat = chatResponse?.data
+
+  const isTodayChat = useMemo(() => {
+    if (!chat?.createdAt) return false
+    const chatDate = new Date(chat.createdAt).toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0]
+    return chatDate === today
+  }, [chat?.createdAt])
 
   useEffect(() => {
     if (chat?.chatData.messages && messagesWithStreaming.length === 0) {
@@ -334,6 +341,11 @@ export default function ChatPage() {
 
       {/* 입력 영역 */}
       <div className="bg-white border-t sticky bottom-0">
+        {!isTodayChat && (
+          <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2">
+            <p className="text-sm text-yellow-800">오늘의 기록만 작성할 수 있습니다. 새로운 기록을 시작하려면 홈으로 돌아가세요.</p>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
           <div className="p-2">
             <div className="relative">
@@ -343,7 +355,7 @@ export default function ChatPage() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 onCompositionStart={() => setComposing(true)}
                 onCompositionEnd={() => setComposing(false)}
-                placeholder="메시지를 입력하세요..."
+                placeholder={isTodayChat ? "메시지를 입력하세요..." : "오늘의 기록만 작성할 수 있습니다."}
                 className="w-full resize-none rounded-[22px] border border-gray-200 bg-gray-50 px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-300 pr-12 min-h-[44px] max-h-32 text-[15px] transition-colors"
                 rows={1}
                 onKeyDown={(e) => {
@@ -352,12 +364,12 @@ export default function ChatPage() {
                     handleSubmit(e)
                   }
                 }}
-                disabled={isStreaming}
+                disabled={isStreaming || !isTodayChat}
               />
               <button
                 type="submit"
                 className="absolute top-1/2 -translate-y-1/2 right-3 flex items-center justify-center w-8 h-8 text-[#4C83FF] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!newMessage.trim() || composing || isStreaming}
+                disabled={!newMessage.trim() || composing || isStreaming || !isTodayChat}
               >
                 <Send className="w-5 h-5" />
               </button>
