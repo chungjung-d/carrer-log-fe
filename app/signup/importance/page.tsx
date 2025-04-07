@@ -66,12 +66,12 @@ export default function ImportancePage() {
     if (calculateTotal(values) === 100) {
       try {
         await jobSatisfactionApi.createImportance({
-          Workload: values.업무 || 0,
-          Compensation: values.보상 || 0,
-          Growth: values.성장 || 0,
-          WorkEnvironment: values.환경 || 0,
-          WorkRelationships: values.관계 || 0,
-          WorkValues: values.가치 || 0,
+          Workload: values.업무,
+          Compensation: values.보상,
+          Growth: values.성장,
+          WorkEnvironment: values.환경,
+          WorkRelationships: values.관계,
+          WorkValues: values.가치,
         });
         router.push('/signup/satisfaction');
       } catch (error) {
