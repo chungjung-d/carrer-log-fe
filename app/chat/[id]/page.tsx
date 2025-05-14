@@ -320,7 +320,7 @@ export default function ChatPage() {
                       : 'bg-white border border-gray-200 rounded-t-[22px] rounded-r-[22px] rounded-bl-[4px]'
                   }`}
                 >
-                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
+                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-black">
                     {message.content}
                     {message.id === 'streaming' && <span className="animate-pulse">▋</span>}
                   </p>
