@@ -113,6 +113,10 @@ export default function MyPage() {
         return
       }
 
+      // 삭제 확인 메시지 표시
+      const isConfirmed = window.confirm('정말로 이 채팅을 삭제하시겠습니까?')
+      if (!isConfirmed) return
+
       await noteApi.deleteChat(chatId)
       toast.success('채팅이 삭제되었습니다.')
       // 채팅 목록 새로고침
