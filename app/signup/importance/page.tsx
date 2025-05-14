@@ -105,10 +105,10 @@ export default function ImportancePage() {
                   <div className="absolute bottom-0 left-0 w-full h-[6px] bg-blue-100 -z-10 translate-y-[2px]" />
                 </h2>
               </div>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                각 항목의 슬라이더를 조절하여 중요도를 설정해주세요.<br />
-                설정된 값은 향후 커리어 추천에 활용됩니다.
-              </p>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  각 항목의 슬라이더를 조절하여 중요도를 설정해주세요.<br />
+                  설정된 값은 향후 커리어 추천에 활용됩니다.
+                </p>
             </div>
           </div>
 
