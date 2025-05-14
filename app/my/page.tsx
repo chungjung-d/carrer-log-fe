@@ -306,7 +306,7 @@ export default function MyPage() {
                     </button>
                     <div className="pl-7">
                       <SheetTitle className="text-base font-medium text-gray-500">오늘의 주제</SheetTitle>
-                      <p className="text-sm text-gray-400">카드를 길게 눌러 새로운 주제를 확인해보세요</p>
+                      <p className="text-sm text-gray-400">카드를 새로고침 해서 새로운 주제를 확인해보세요</p>
                     </div>
                   </SheetHeader>
                   <Carousel
