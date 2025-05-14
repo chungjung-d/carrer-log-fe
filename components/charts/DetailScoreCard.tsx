@@ -29,8 +29,8 @@ export function DetailScoreCard({ categories }: DetailScoreCardProps) {
                   value={score} 
                   className="h-2 rounded-full overflow-hidden"
                   style={{ 
-                    background: `linear-gradient(to right, ${color}15, ${color}05)`,
-                    '--progress-foreground': color
+                    backgroundColor: `${color}10`,
+                    '--progress-foreground': `${color}40`
                   } as React.CSSProperties}
                 />
               </div>

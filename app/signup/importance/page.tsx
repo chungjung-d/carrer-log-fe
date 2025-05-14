@@ -1,7 +1,5 @@
 'use client'
 
-import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -84,9 +82,7 @@ export default function ImportancePage() {
     <main className="min-h-screen bg-gray-50">
       {/* 상단 네비게이션 */}
       <nav className="flex items-center justify-between px-4 py-3 bg-white border-b sticky top-0 z-10">
-        <Link href="/signup" className="text-black">
-          <ChevronLeft className="w-6 h-6" />
-        </Link>
+        <div className="w-6" /> {/* 빈 공간으로 대체 */}
         <button 
           onClick={handleNext}
           className={cn(
@@ -109,15 +105,10 @@ export default function ImportancePage() {
                   <div className="absolute bottom-0 left-0 w-full h-[6px] bg-blue-100 -z-10 translate-y-[2px]" />
                 </h2>
               </div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  각 항목의 슬라이더를 조절하여 중요도를 설정해주세요.<br />
-                  설정된 값은 향후 커리어 추천에 활용됩니다.
-                </p>
-                <div className="text-sm font-medium">
-                  총합: <span className="text-[#007AFF]">{calculateTotal(values)}</span>/100
-                </div>
-              </div>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                각 항목의 슬라이더를 조절하여 중요도를 설정해주세요.<br />
+                설정된 값은 향후 커리어 추천에 활용됩니다.
+              </p>
             </div>
           </div>
 
@@ -187,6 +178,25 @@ export default function ImportancePage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* 중요도 총합 표시 */}
+          <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 mt-4 rounded-t-xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+            <div className="flex items-center justify-between max-w-md mx-auto">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className="text-sm font-medium text-gray-900">총 중요도</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  "text-lg font-semibold",
+                  calculateTotal(values) === 100 ? "text-blue-500" : "text-gray-400"
+                )}>
+                  {calculateTotal(values)}
+                </span>
+                <span className="text-sm text-gray-500">/ 100</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

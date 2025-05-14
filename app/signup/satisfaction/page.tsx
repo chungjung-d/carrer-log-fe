@@ -1,7 +1,5 @@
 'use client'
 
-import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { jobSatisfactionApi } from '@/lib/api/job-satisfaction'
@@ -69,9 +67,7 @@ export default function SatisfactionPage() {
     <main className="min-h-screen bg-gray-50">
       {/* 상단 네비게이션 */}
       <nav className="flex items-center justify-between px-4 py-3 bg-white border-b sticky top-0 z-10">
-        <Link href="/signup/importance" className="text-black">
-          <ChevronLeft className="w-6 h-6" />
-        </Link>
+        <div className="w-6" /> {/* 빈 공간으로 대체 */}
         <button 
           onClick={handleNext}
           className="text-[#007AFF] font-medium"

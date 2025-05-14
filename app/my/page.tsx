@@ -6,13 +6,14 @@ import { BalanceChartCard } from '@/components/charts/BalanceChartCard'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import { Plus, PenLine, Sparkles, ChevronRight, ArrowLeft, RefreshCw, MessageSquare } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetHeader } from '@/components/ui/sheet'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { jobSatisfactionApi, CurrentJobSatisfactionResponse } from '@/lib/api/job-satisfaction'
 import { noteApi, PreChat, ChatListResponse } from '@/lib/api/note'
 import { ApiResponse } from '@/lib/api/types'
 import { useQuery } from '@tanstack/react-query'
 import { useProfile } from '@/hooks/useProfile'
+import type { EmblaCarouselType } from 'embla-carousel'
 
 export default function MyPage() {
   const router = useRouter()
@@ -20,7 +21,17 @@ export default function MyPage() {
   const [isTopicMode, setIsTopicMode] = useState(false)
   const [currentTopicIndex, setCurrentTopicIndex] = useState(0)
   const [isCreatingChat, setIsCreatingChat] = useState(false)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [api, setApi] = useState<EmblaCarouselType>()
   
+  useEffect(() => {
+    if (!api) return
+
+    api.on('select', () => {
+      setCurrentSlide(api.selectedScrollSnap())
+    })
+  }, [api])
+
   const { data: preChatsResponse, isLoading: isPreChatsLoading, error: preChatsError } = useQuery<ApiResponse<{ pre_chats: PreChat[] }>>({
     queryKey: ['preChats'],
     queryFn: () => noteApi.getPreChats(),
@@ -176,6 +187,7 @@ export default function MyPage() {
             loop: true,
           }}
           className="w-full"
+          setApi={setApi}
         >
           <CarouselContent>
             <CarouselItem>
@@ -191,6 +203,22 @@ export default function MyPage() {
           <CarouselPrevious />
           <CarouselNext />
         </Carousel>
+        <div className="flex justify-center gap-2 mt-4">
+          {[0, 1, 2].map((index) => (
+            <button
+              key={index}
+              onClick={() => {
+                if (api) {
+                  api.scrollTo(index)
+                }
+              }}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                currentSlide === index ? 'bg-blue-500 w-4' : 'bg-gray-300'
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* 채팅 리스트 */}
