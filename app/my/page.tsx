@@ -4,16 +4,17 @@ import { TotalScoreCard } from '@/components/charts/TotalScoreCard'
 import { DetailScoreCard } from '@/components/charts/DetailScoreCard'
 import { BalanceChartCard } from '@/components/charts/BalanceChartCard'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
-import { Plus, PenLine, Sparkles, ChevronRight, ArrowLeft, RefreshCw, MessageSquare } from 'lucide-react'
+import { Plus, PenLine, Sparkles, ChevronRight, ArrowLeft, RefreshCw, MessageSquare, Trash2 } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetHeader } from '@/components/ui/sheet'
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { jobSatisfactionApi, CurrentJobSatisfactionResponse } from '@/lib/api/job-satisfaction'
 import { noteApi, PreChat, ChatListResponse } from '@/lib/api/note'
 import { ApiResponse } from '@/lib/api/types'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useProfile } from '@/hooks/useProfile'
 import type { EmblaCarouselType } from 'embla-carousel'
+import { toast } from 'sonner'
 
 export default function MyPage() {
   const router = useRouter()
@@ -23,6 +24,7 @@ export default function MyPage() {
   const [isCreatingChat, setIsCreatingChat] = useState(false)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [api, setApi] = useState<EmblaCarouselType>()
+  const queryClient = useQueryClient()
   
   useEffect(() => {
     if (!api) return
@@ -100,6 +102,26 @@ export default function MyPage() {
       handleCreateChat(currentTopic.id)
     }
   }, [currentTopic, handleCreateChat])
+
+  const handleDeleteChat = async (chatId: string, createdAt: string) => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const chatDate = new Date(createdAt).toISOString().split('T')[0]
+      
+      if (chatDate !== today) {
+        toast.error('당일에 생성된 채팅만 삭제할 수 있습니다.')
+        return
+      }
+
+      await noteApi.deleteChat(chatId)
+      toast.success('채팅이 삭제되었습니다.')
+      // 채팅 목록 새로고침
+      queryClient.invalidateQueries({ queryKey: ['chatList'] })
+    } catch (error) {
+      console.error('채팅 삭제 실패:', error)
+      toast.error('채팅 삭제에 실패했습니다.')
+    }
+  }
 
   if (isProfileLoading || isJobSatisfactionLoading || isPreChatsLoading || isChatListLoading) {
     return (
@@ -229,7 +251,7 @@ export default function MyPage() {
             {chatListResponse.data.map((chat) => (
               <div
                 key={chat.id}
-                className="bg-white p-4 rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors cursor-pointer"
+                className="bg-white p-4 rounded-2xl border border-gray-200 hover:border-blue-500 transition-colors cursor-pointer group"
                 onClick={() => router.push(`/chat/${chat.id}`)}
               >
                 <div className="flex items-center gap-3">
@@ -246,6 +268,15 @@ export default function MyPage() {
                       })}
                     </div>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteChat(chat.id, chat.createdAt)
+                    }}
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
                 </div>
               </div>

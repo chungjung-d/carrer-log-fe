@@ -170,4 +170,18 @@ export const noteApi = {
       throw error
     }
   },
+
+  deleteChat: async (chatId: string): Promise<ApiResponse<void>> => {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/note/chat/${chatId}`, {
+        headers: getAuthHeader(),
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('채팅 삭제 실패:', error.response?.data || error.message);
+      }
+      throw error;
+    }
+  },
 } 
